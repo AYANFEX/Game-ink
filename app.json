@@ -1,13 +1,18 @@
 {
   "expo": {
     "name": "Game Ink",
-    "slug": "gameink-katana",
+    "slug": "game-ink",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "owner": "domax",
     "scheme": "gameink",
+    "extra": {
+      "eas": {
+        "projectId": "402380cb-64a9-4eb5-bf64-fb9bf1cc4802"
+      }
+    },
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
