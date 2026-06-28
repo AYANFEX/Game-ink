@@ -7,13 +7,11 @@ import * as SplashScreen from 'expo-splash-screen';
 import * as Linking from 'expo-linking';
 import { StatusBar } from 'expo-status-bar';
 
-// Keep splash visible until WebView is ready
 SplashScreen.preventAutoHideAsync();
 
-const APP_URL  = 'https://gameink.helioho.st/spa/';
-const APP_HOST = 'gameink.helioho.st';
+const APP_URL  = 'https://app.v1-0-0.gameink.abikaz.name.ng/spa/';
+const APP_HOST = 'app.v1-0-0.gameink.abikaz.name.ng';
 
-// ── Notification permission ────────────────────────────────────
 async function requestNotifications() {
   try {
     await Notifications.requestPermissionsAsync();
@@ -21,28 +19,25 @@ async function requestNotifications() {
 }
 
 export default function MainScreen() {
-  const webViewRef  = useRef<WebView>(null);
-  const canGoBack   = useRef(false);
-  const isReady     = useRef(false);
+  const webViewRef = useRef<WebView>(null);
+  const canGoBack  = useRef(false);
+  const isReady    = useRef(false);
 
-  // Request notification permission on first launch
   useEffect(() => {
     requestNotifications();
   }, []);
 
-  // Android hardware back button — navigate back in WebView first
   useEffect(() => {
     const handler = BackHandler.addEventListener('hardwareBackPress', () => {
       if (canGoBack.current) {
         webViewRef.current?.goBack();
-        return true; // consumed
+        return true;
       }
-      return false; // let system handle (exits app)
+      return false;
     });
     return () => handler.remove();
   }, []);
 
-  // Hide splash once WebView has painted
   const onLoad = useCallback(async () => {
     if (!isReady.current) {
       isReady.current = true;
@@ -54,7 +49,6 @@ export default function MainScreen() {
     canGoBack.current = state.canGoBack;
   };
 
-  // Domain lock — anything outside APP_HOST opens in system browser
   const onShouldStartLoadWithRequest = (req: ShouldStartLoadRequest): boolean => {
     try {
       const { hostname } = new URL(req.url);
@@ -69,33 +63,22 @@ export default function MainScreen() {
   return (
     <View style={styles.container}>
       <StatusBar style="light" translucent backgroundColor="transparent" />
-
       <WebView
         ref={webViewRef}
         source={{ uri: APP_URL }}
         style={styles.webview}
-
-        // Lifecycle
         onLoad={onLoad}
         onNavigationStateChange={onNavigationStateChange}
         onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
-
-        // JS & storage
         javaScriptEnabled={true}
         domStorageEnabled={true}
         cacheEnabled={true}
-
-        // Media — shorts need this
         mediaPlaybackRequiresUserAction={false}
         allowsInlineMediaPlayback={true}
-
-        // Feel — remove browser scroll bounce & scrollbars
         overScrollMode="never"
         bounces={false}
         showsVerticalScrollIndicator={false}
         showsHorizontalScrollIndicator={false}
-
-        // No white flash while loading
         renderLoading={() => <View style={styles.blank} />}
         startInLoadingState={true}
       />
@@ -104,16 +87,7 @@ export default function MainScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
-  webview: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
-  blank: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
+  container: { flex: 1, backgroundColor: '#000' },
+  webview:   { flex: 1, backgroundColor: '#000' },
+  blank:     { flex: 1, backgroundColor: '#000' },
 });
