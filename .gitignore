@@ -1,0 +1,11 @@
+node_modules/
+.expo/
+dist/
+npm-debug.*
+*.orig.*
+web-build/
+
+# ── Sensitive — never commit these ────────────────────────────
+credentials.json
+*.keystore
+.env
