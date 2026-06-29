@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "818086870870",
+    "project_id": "game-ink",
+    "storage_bucket": "game-ink.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:818086870870:android:d5e799c1b7ac0d039960f7",
+        "android_client_info": {
+          "package_name": "com.gameink.katana"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCy4nZGyTOvyYrb-1BkiLM1WZSzBvEpdJQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
