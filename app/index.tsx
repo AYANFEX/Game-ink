@@ -181,9 +181,11 @@ export default function MainScreen() {
     }, LOAD_TIMEOUT);
   }, []);
 
-  const onLoad = useCallback(async () => {
+  const onLoadProgress = useCallback(async ({ nativeEvent }: { nativeEvent: { progress: number } }) => {
+    if (nativeEvent.progress < 1) return;
     clearTimers();
     setShimmer(false);
+    setTimedOut(false);
     if (!isReady.current) {
       isReady.current = true;
       await SplashScreen.hideAsync();
@@ -217,7 +219,7 @@ export default function MainScreen() {
         source={{ uri: APP_URL }}
         style={styles.webview}
         onLoadStart={onLoadStart}
-        onLoad={onLoad}
+        onLoadProgress={onLoadProgress}
         onNavigationStateChange={onNavigationStateChange}
         onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
         javaScriptEnabled={true}
