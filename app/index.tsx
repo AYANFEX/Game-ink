@@ -166,7 +166,7 @@ export default function MainScreen() {
     shimmerTimer.current = setTimeout(() => setShimmer(true), SHIMMER_DELAY);
   }, []);
 
-  const onLoadEnd = useCallback(async () => {
+  const onLoad = useCallback(async () => {
     if (shimmerTimer.current) clearTimeout(shimmerTimer.current);
     setShimmer(false);
     if (!isReady.current) {
@@ -215,7 +215,7 @@ export default function MainScreen() {
           source={{ uri: APP_URL }}
           style={styles.webview}
           onLoadStart={onLoadStart}
-          onLoadEnd={onLoadEnd}
+          onLoad={onLoad}
           onError={onError}
           onHttpError={onError}
           onNavigationStateChange={onNavigationStateChange}
@@ -229,8 +229,6 @@ export default function MainScreen() {
           bounces={false}
           showsVerticalScrollIndicator={false}
           showsHorizontalScrollIndicator={false}
-          renderLoading={() => <View style={styles.blank} />}
-          startInLoadingState={true}
         />
       )}
 
