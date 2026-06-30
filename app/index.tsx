@@ -16,6 +16,7 @@ const APP_URL     = 'https://app.v1-0-0.gameink.abikaz.name.ng/';
 const APP_HOST    = 'app.v1-0-0.gameink.abikaz.name.ng';
 const TOKEN_URL   = 'https://app.v1-0-0.gameink.abikaz.name.ng/api/register-push-token.php';
 const SHIMMER_DELAY = 150;
+const LOAD_TIMEOUT  = 8000; // 8s — if page hasn't loaded by then, show timeout page
 const { width, height } = Dimensions.get('window');
 
 // ── Push notification setup ───────────────────────────────────
@@ -121,8 +122,8 @@ function ShimmerOverlay({ visible }: { visible: boolean }) {
   );
 }
 
-// ── Offline page ──────────────────────────────────────────────
-function OfflinePage({ onRetry }: { onRetry: () => void }) {
+// ── Timeout page ──────────────────────────────────────────────
+function TimeoutPage({ onRetry }: { onRetry: () => void }) {
   return (
     <View style={styles.offlinePage}>
       <Image
@@ -130,9 +131,9 @@ function OfflinePage({ onRetry }: { onRetry: () => void }) {
         style={styles.offlineLogo}
         resizeMode="contain"
       />
-      <Text style={styles.offlineTitle}>You're offline</Text>
+      <Text style={styles.offlineTitle}>Connection timed out</Text>
       <Text style={styles.offlineSubtitle}>
-        Check your connection and try again.
+        Please check your internet connection.
       </Text>
       <TouchableOpacity style={styles.retryBtn} onPress={onRetry} activeOpacity={0.75}>
         <Text style={styles.retryText}>Retry</Text>
@@ -143,12 +144,13 @@ function OfflinePage({ onRetry }: { onRetry: () => void }) {
 
 // ── Main screen ───────────────────────────────────────────────
 export default function MainScreen() {
-  const webViewRef   = useRef<WebView>(null);
-  const canGoBack    = useRef(false);
-  const isReady      = useRef(false);
-  const shimmerTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [shimmer,  setShimmer]  = useState(false);
-  const [offline,  setOffline]  = useState(false);
+  const webViewRef    = useRef<WebView>(null);
+  const canGoBack     = useRef(false);
+  const isReady       = useRef(false);
+  const shimmerTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timeoutTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [shimmer, setShimmer] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
 
   useEffect(() => { registerForPushNotifications(); }, []);
 
@@ -161,13 +163,26 @@ export default function MainScreen() {
     return () => handler.remove();
   }, []);
 
+  const clearTimers = () => {
+    if (shimmerTimer.current) clearTimeout(shimmerTimer.current);
+    if (timeoutTimer.current) clearTimeout(timeoutTimer.current);
+  };
+
   const onLoadStart = useCallback(() => {
-    setOffline(false);
-    shimmerTimer.current = setTimeout(() => setShimmer(true), SHIMMER_DELAY);
+    setTimedOut(false);
+    shimmerTimer.current  = setTimeout(() => setShimmer(true), SHIMMER_DELAY);
+    timeoutTimer.current  = setTimeout(() => {
+      setShimmer(false);
+      setTimedOut(true);
+      if (!isReady.current) {
+        isReady.current = true;
+        SplashScreen.hideAsync();
+      }
+    }, LOAD_TIMEOUT);
   }, []);
 
   const onLoad = useCallback(async () => {
-    if (shimmerTimer.current) clearTimeout(shimmerTimer.current);
+    clearTimers();
     setShimmer(false);
     if (!isReady.current) {
       isReady.current = true;
@@ -175,18 +190,8 @@ export default function MainScreen() {
     }
   }, []);
 
-  const onError = useCallback(() => {
-    if (shimmerTimer.current) clearTimeout(shimmerTimer.current);
-    setShimmer(false);
-    setOffline(true);
-    if (!isReady.current) {
-      isReady.current = true;
-      SplashScreen.hideAsync();
-    }
-  }, []);
-
   const onRetry = useCallback(() => {
-    setOffline(false);
+    setTimedOut(false);
     webViewRef.current?.reload();
   }, []);
 
@@ -207,32 +212,28 @@ export default function MainScreen() {
     <View style={styles.container}>
       <StatusBar style="light" translucent backgroundColor="transparent" />
 
-      {offline ? (
-        <OfflinePage onRetry={onRetry} />
-      ) : (
-        <WebView
-          ref={webViewRef}
-          source={{ uri: APP_URL }}
-          style={styles.webview}
-          onLoadStart={onLoadStart}
-          onLoad={onLoad}
-          onError={onError}
-          onHttpError={onError}
-          onNavigationStateChange={onNavigationStateChange}
-          onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
-          javaScriptEnabled={true}
-          domStorageEnabled={true}
-          cacheEnabled={true}
-          mediaPlaybackRequiresUserAction={false}
-          allowsInlineMediaPlayback={true}
-          overScrollMode="never"
-          bounces={false}
-          showsVerticalScrollIndicator={false}
-          showsHorizontalScrollIndicator={false}
-        />
-      )}
+      <WebView
+        ref={webViewRef}
+        source={{ uri: APP_URL }}
+        style={styles.webview}
+        onLoadStart={onLoadStart}
+        onLoad={onLoad}
+        onNavigationStateChange={onNavigationStateChange}
+        onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+        cacheEnabled={true}
+        mediaPlaybackRequiresUserAction={false}
+        allowsInlineMediaPlayback={true}
+        overScrollMode="never"
+        bounces={false}
+        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
+      />
 
-      <ShimmerOverlay visible={shimmer && !offline} />
+      <ShimmerOverlay visible={shimmer && !timedOut} />
+
+      {timedOut && <TimeoutPage onRetry={onRetry} />}
     </View>
   );
 }
@@ -251,12 +252,13 @@ const styles = StyleSheet.create({
   },
 
   offlinePage: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: '#000',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 32,
     gap: 16,
+    zIndex: 20,
   },
   offlineLogo: {
     width: 80,
